@@ -2,8 +2,8 @@
 
 namespace Knp\Component\Pager;
 
-use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+//use Symfony\Component\EventDispatcher\EventDispatcher;
+use Jmikola\WildcardEventDispatcherBundle\EventDispatcher\ContainerAwareEventDispatcher as EventDispatcher;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Knp\Component\Pager\Event\Subscriber\Paginate\PaginationSubscriber;
 use Knp\Component\Pager\Event\Subscriber\Sortable\SortableSubscriber;
@@ -15,10 +15,10 @@ use Knp\Component\Pager\Event;
  * wanted target and finally it generates pagination view
  * which is only the result of paginator
  */
-class Paginator implements PaginatorInterface
+class Paginator
 {
     /**
-     * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+     * @var Symfony\Component\EventDispatcher\EventDispatcher
      */
     protected $eventDispatcher;
 
@@ -41,9 +41,9 @@ class Paginator implements PaginatorInterface
      * Can be a service in concept. By default it
      * hooks standard pagination subscriber
      *
-     * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher
+     * @param Symfony\Component\EventDispatcher\EventDispatcher $eventDispatcher
      */
-    public function __construct(EventDispatcherInterface $eventDispatcher = null)
+    public function __construct(EventDispatcher $eventDispatcher = null)
     {
         $this->eventDispatcher = $eventDispatcher;
         if (is_null($this->eventDispatcher)) {
@@ -77,10 +77,10 @@ class Paginator implements PaginatorInterface
      *     boolean $distinct - default true for distinction of results
      *     string $alias - pagination alias, default none
      *     array $whitelist - sortable whitelist for target fields being paginated
-     * @throws \LogicException
-     * @return \Knp\Component\Pager\Pagination\PaginationInterface
+     * @throws LogicException
+     * @return Knp\Component\Pager\Pagination\PaginationInterface
      */
-    public function paginate($target, $page = 1, $limit = 10, array $options = array())
+    public function paginate($target, $page = 1, $limit = 10, $options = array())
     {
         $limit = intval(abs($limit));
         if (!$limit) {
@@ -88,16 +88,6 @@ class Paginator implements PaginatorInterface
         }
         $offset = abs($page - 1) * $limit;
         $options = array_merge($this->defaultOptions, $options);
-        
-        // default sort field and direction are set based on options (if available)
-        if (!isset($_GET[$options['sortFieldParameterName']]) && isset($options['defaultSortFieldName'])) {
-            $_GET[$options['sortFieldParameterName']] = $options['defaultSortFieldName'];
-            
-            if (!isset($_GET[$options['sortDirectionParameterName']])) {
-                $_GET[$options['sortDirectionParameterName']] = isset($options['defaultSortDirection']) ? $options['defaultSortDirection'] : 'asc';
-            }
-        }
-        
         // before pagination start
         $beforeEvent = new Event\BeforeEvent($this->eventDispatcher);
         $this->eventDispatcher->dispatch('knp_pager.before', $beforeEvent);
@@ -135,7 +125,7 @@ class Paginator implements PaginatorInterface
     /**
      * Hooks in the given event subscriber
      *
-     * @param \Symfony\Component\EventDispatcher\EventSubscriberInterface $subscriber
+     * @param Symfony\Component\EventDispatcher\EventSubscriberInterface $subscriber
      */
     public function subscribe(EventSubscriberInterface $subscriber)
     {
